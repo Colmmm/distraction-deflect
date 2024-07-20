@@ -1,18 +1,19 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react()],
   build: {
     rollupOptions: {
       input: {
-        popup: 'src/popup.html',
-        background: 'src/background.js'
+        popup: resolve(__dirname, 'src/popup.html')
       },
       output: {
-        entryFileNames: '[name].js'
+        dir: 'dist'
       }
-    }
-  }
+    },
+    assetsDir: '',  // Ensures the assets are in the root of dist directory
+    outDir: 'dist',
+  },
+  publicDir: 'public'  // This ensures that all files in the public directory are copied to the dist directory
 });
 
