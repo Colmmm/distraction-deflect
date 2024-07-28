@@ -1,43 +1,36 @@
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension installed");
-  chrome.storage.sync.get({ blockedSites: [] }, (data) => {
-    console.log("Initial blocked sites:", data.blockedSites);
-    updateDynamicRules(data.blockedSites);
+
+  // Clear storage to remove old data
+  chrome.storage.sync.clear((error) => {
+    if (error) {
+      console.error('Error clearing storage:', error);
+    } else {
+      console.log('Chrome storage cleared');
+
+      // Initialize with empty blocked sites
+      chrome.storage.sync.get({ blockedSites: [] }, (data) => {
+        console.log("Initial blocked sites:", data.blockedSites);
+      });
+    }
   });
 });
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  console.log("Storage changed:", changes, namespace);
   if (namespace === 'sync' && changes.blockedSites) {
-    updateDynamicRules(changes.blockedSites.newValue);
+    console.log("Blocked sites updated:", changes.blockedSites.newValue);
   }
 });
 
-if (chrome.declarativeNetRequest.onRuleMatchedDebug) {
-  chrome.declarativeNetRequest.onRuleMatchedDebug.addListener((info) => {
-    console.log("onRuleMatchedDebug", JSON.stringify(info, null, 2));
-  });
-} else {
-  console.warn("declarativeNetRequest.onRuleMatchedDebug is not available.");
-}
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    chrome.storage.sync.get({ blockedSites: [] }, (data) => {
+      const blockedSites = data.blockedSites || [];
+      const isBlocked = blockedSites.some(site => changeInfo.url.includes(site));
 
-function updateDynamicRules(blockedSites) {
-  console.log("Updating blocking rules for sites:", blockedSites);
-  const rules = blockedSites.map((site, index) => ({
-    id: index + 1,
-    priority: 1,
-    action: { type: "redirect", redirect: { url: "https://www.productive-site.com" } },
-    condition: { urlFilter: `*://${site}/*` }
-  }));
-
-  chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: rules.map(rule => rule.id),
-    addRules: rules
-  }, () => {
-    if (chrome.runtime.lastError) {
-      console.error(chrome.runtime.lastError.message);
-    } else {
-      console.log("Blocking rules updated:", rules);
-    }
-  });
-}
+      if (isBlocked) {
+        chrome.tabs.update(tabId, { url: chrome.runtime.getURL("blocked.html") });
+      }
+    });
+  }
+});
