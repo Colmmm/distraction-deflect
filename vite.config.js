@@ -1,19 +1,27 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import copy from 'rollup-plugin-copy';
 
 export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, 'src/popup.html')
+        popup: resolve(__dirname, 'src/popup.html'),
+        background: resolve(__dirname, 'src/background.js'),
       },
       output: {
-        dir: 'dist'
-      }
-    },
-    assetsDir: '',  // Ensures the assets are in the root of dist directory
-    outDir: 'dist',
-  },
-  publicDir: 'public'  // This ensures that all files in the public directory are copied to the dist directory
+        dir: 'dist',
+        entryFileNames: '[name].js',
+        assetFileNames: '[name].[ext]'
+      },
+      plugins: [
+        copy({
+          targets: [
+            { src: 'public/*', dest: 'dist' },
+            { src: 'manifest.json', dest: 'dist' }
+          ]
+        })
+      ]
+    }
+  }
 });
-
