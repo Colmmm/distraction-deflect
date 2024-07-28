@@ -12,10 +12,9 @@
     "service_worker": "background.js"
   },
   "permissions": [
-    "declarativeNetRequest",
-    "declarativeNetRequestFeedback",
-    "declarativeNetRequestWithHostAccess",
-    "storage"
+    "tabs",
+    "storage",
+    "activeTab"
   ],
   "host_permissions": [
     "*://*/*"
